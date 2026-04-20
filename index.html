@@ -1250,4 +1250,32 @@ setInterval(async()=>{
 },30000);
 </script>
 </body>
-</html>
+</html>function renderChecklist(uid){
+  const sec=document.getElementById('checklistSection');if(!sec)return;
+  const cl=getChecklist(uid);
+  const done=getTodayChecklist(uid);
+  const doneCount=Object.values(done).filter(Boolean).length;
+  const totalPts=cl.reduce((a,ci)=>a+ci.p,0);
+  const streak=getStreak(uid);
+  const bonus=streak>=3?2:1;
+
+  const wrap=document.createElement('div');wrap.className='checklist-section';
+  const hdr=document.createElement('div');hdr.className='cl-header';
+  hdr.innerHTML='<div class="cl-title">📋 早晨Checklist（'+doneCount+'/'+cl.length+'）</div>'
+    +'<div class="cl-xp">'+(bonus>1?'⚡ 2x ':'')+'XP each</div>';
+  wrap.appendChild(hdr);
+
+  cl.forEach(item=>{
+    const isDone=!!done[item.id];
+    const row=document.createElement('div');row.className='cl-item'+(isDone?' done':'');
+    row.innerHTML='<div class="cl-check">'+(isDone?'✓':'')+'</div>'
+      +'<div class="cl-label">'+item.e+' '+item.n+'</div>'
+      +'<div class="cl-pts">+'+(item.p*bonus)+'xp</div>';
+    row.onclick=()=>toggleCheck(uid,item.id);
+    wrap.appendChild(row);
+  });
+
+  sec.innerHTML='';sec.appendChild(wrap);
+}
+
+
