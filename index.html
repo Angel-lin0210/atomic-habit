@@ -436,6 +436,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
     <div class="streak-row" id="streakRow"></div>
     <!-- Attack button -->
     <div class="attack-wrap" id="attackWrap" style="display:none;"></div>
+    <!-- Checklist section -->
+    <div id="checklistSection"></div>
     <!-- Parent rating section -->
     <div id="ratingSection"></div>
   </div>
@@ -1167,7 +1169,7 @@ function renderUserList(){
     const rl=document.createElement('div');rl.className='ul-r';rl.textContent=u.role==='child'?'🧒 孩子 · '+getXP(u.id)+' XP':u.role==='admin'?'👑 管理員':'👨 家長';
     info.appendChild(nm);info.appendChild(rl);
     const acts=document.createElement('div');
-    if(u.id!==CU.id){const db=document.createElement('button');db.className='ul-del';db.textContent='移除';const uid=u.id;db.onclick=()=>{if(confirm('確定移除？')){users=users.filter(x=>x.id!==uid);save();renderUserList();renderAssignList();}};acts.appendChild(db);}
+    if(u.id!==CU.id){const db=document.createElement('button');db.className='ul-del';db.textContent='移除';const uid=u.id;db.onclick=()=>{users=users.filter(x=>x.id!==uid);save();renderSettings();modal('🗑️','已移除！','','帳號已刪除');};acts.appendChild(db);}
     else{const sp=document.createElement('span');sp.style.cssText='font-size:.72rem;color:var(--sub);';sp.textContent='（自己）';acts.appendChild(sp);}
     row.appendChild(info);row.appendChild(acts);el.appendChild(row);
   });
@@ -1184,7 +1186,7 @@ function addChild(){
   users.push({id,name,avatar:av?av.textContent:'🧒',role:'child',pinHash:hp(pin),assignedChildren:[]});
   logs[id]=[];redeemHist[id]=[];pendingRedeems[id]=[];
   save();document.getElementById('newCname').value='';document.getElementById('newCpin').value='';err.textContent='';
-  renderUserList();renderAssignList();modal('🧒','孩子帳號建立！','','「'+name+'」現在可以登入了！');
+  renderSettings();modal('🧒','孩子帳號建立！','','「'+name+'」現在可以登入了！');
 }
 
 function addParent(){
@@ -1198,7 +1200,7 @@ function addParent(){
   if(!asn.length){err.textContent='請選擇至少一個孩子';return;}
   users.push({id:'u'+Date.now(),name,avatar:av?av.textContent:'👩',role:'parent',pinHash:hp(pin),assignedChildren:asn});
   save();document.getElementById('newPname').value='';document.getElementById('newPpin').value='';err.textContent='';
-  renderUserList();renderAssignList();modal('👨','家長帳號建立！','','「'+name+'」現在可以登入了！');
+  renderSettings();modal('👨','家長帳號建立！','','「'+name+'」現在可以登入了！');
 }
 
 function renderRewardManageList(){
