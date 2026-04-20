@@ -587,8 +587,15 @@ let CU=null,VID=null;
 let pinBuf='',pinTarget=null;
 let curPage='today';
 let _saving=false,_pendingSave=false;
-let BIN_ID=localStorage.getItem('rpg_bin_id')||null;
-let FAMILY_CODE=localStorage.getItem('rpg_family_code')||null;
+// Try multiple storage locations for resilience
+let BIN_ID=localStorage.getItem('rpg_bin_id')||sessionStorage.getItem('rpg_bin_id')||null;
+let FAMILY_CODE=localStorage.getItem('rpg_family_code')||sessionStorage.getItem('rpg_family_code')||null;
+
+// Save to both storages
+function saveToStorage(key,val){
+  try{localStorage.setItem(key,val);}catch(e){}
+  try{sessionStorage.setItem(key,val);}catch(e){}
+}
 
 // ══════ UTILS ══════
 function hp(p){let h=0;for(let c of p)h=(Math.imul(31,h)+c.charCodeAt(0))|0;return h.toString(36);}
@@ -662,7 +669,7 @@ async function save(){
     if(!BIN_ID){
       const r=await fetch(JURL,{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':JKEY,'X-Bin-Name':'habit-'+Date.now()},body:JSON.stringify(data)});
       const j=await r.json();BIN_ID=j.metadata?.id;
-      if(BIN_ID){localStorage.setItem('rpg_bin_id',BIN_ID);await regFamily();}
+      if(BIN_ID){saveToStorage('rpg_bin_id',BIN_ID);await regFamily();}
     } else {
       await fetch(JURL+'/'+BIN_ID,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':JKEY},body:JSON.stringify(data)});
     }
@@ -716,7 +723,7 @@ async function createFamily(){
     const j=await r.json();const idx=j.record||{};
     if(idx[h]){err.textContent='❌ 這個代碼已被使用，請換一個';return;}
   }catch(e){}
-  FAMILY_CODE=code;localStorage.setItem('rpg_family_code',code);
+  FAMILY_CODE=code;saveToStorage('rpg_family_code',code);
   err.textContent='';
   initAvPicker('adminAvp',CAVS);
   showScreen('adminSetupScreen');
@@ -733,7 +740,7 @@ async function joinFamily(){
     const j=await r.json();const idx=j.record||{};const binId=idx[h];
     if(!binId){err.textContent='❌ 找不到這個家庭代碼';return;}
     BIN_ID=binId;FAMILY_CODE=code;
-    localStorage.setItem('rpg_bin_id',BIN_ID);localStorage.setItem('rpg_family_code',code);
+    saveToStorage('rpg_bin_id',BIN_ID);saveToStorage('rpg_family_code',code);
     await load();err.textContent='';
     if(!users.find(u=>u.role==='admin')){initAvPicker('adminAvp',CAVS);showScreen('adminSetupScreen');}
     else showWho();
@@ -1242,6 +1249,15 @@ _loadTimer=setTimeout(()=>{
 },5000);
 
 async function init(){
+  // If BIN_ID is lost but we have FAMILY_CODE, try to recover automatically
+  if(!BIN_ID&&FAMILY_CODE){
+    try{
+      const h=btoa(unescape(encodeURIComponent(FAMILY_CODE.toLowerCase()))).replace(/[^a-z0-9]/gi,'').slice(0,16);
+      const r=await fetch(JURL+'/'+MASTER_BIN+'/latest',{headers:{'X-Master-Key':JKEY}});
+      const j=await r.json();const idx2=j.record||{};
+      if(idx2[h]){BIN_ID=idx2[h];saveToStorage('rpg_bin_id',BIN_ID);}
+    }catch(e){}
+  }
   try{if(BIN_ID)await load();}catch(e){}
   document.getElementById('loading').style.display='none';
   if(_loadTimer){clearTimeout(_loadTimer);_loadTimer=null;}
